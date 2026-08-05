@@ -1,0 +1,2034 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบสุ่มเวรประจำวันแสนสนุก - Classroom Duty Wizard with Admin</title>
+    <!-- Google Font "Kanit" and FontAwesome for cute icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Kanit', 'sans-serif'],
+                    },
+                    colors: {
+                        magic: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            200: '#ddd6fe',
+                            300: '#c4b5fd',
+                            400: '#a78bfa',
+                            500: '#8b5cf6',
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #fef08a 0%, #d9f99d 50%, #bae6fd 100%);
+            background-attachment: fixed;
+        }
+        /* Glassmorphism classes */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.06);
+        }
+        .rainbow-border {
+            position: relative;
+            border-radius: 1.5rem;
+            background: linear-gradient(90deg, #ff007f, #7f00ff, #00f0ff, #ff007f);
+            background-size: 300% 300%;
+            animation: rainbow-flow 8s ease infinite;
+            padding: 4px;
+        }
+        @keyframes rainbow-flow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        /* Parchment Scroll effect for notes */
+        .parchment {
+            background-color: #fcf5e3;
+            background-image: radial-gradient(circle, #fdf8eb 60%, #f3e5c8 100%);
+            border: 2px solid #c3a167;
+            box-shadow: inset 0 0 20px rgba(139, 92, 26, 0.15), 0 4px 10px rgba(0,0,0,0.06);
+        }
+        /* Floating animations */
+        .floating-magic {
+            animation: float-around 6s ease-in-out infinite alternate;
+        }
+        @keyframes float-around {
+            0% { transform: translateY(0px) rotate(0deg); }
+            100% { transform: translateY(-15px) rotate(10deg); }
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(139, 92, 246, 0.3);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(139, 92, 246, 0.5);
+        }
+
+        /* Print media optimizations */
+        @media print {
+            body {
+                background: white !important;
+                color: black !important;
+                padding: 0 !important;
+            }
+            header, 
+            section.lg\:col-span-4, 
+            .print-hide,
+            #randomizer-modal,
+            #login-page,
+            #admin-page,
+            #confirm-modal,
+            button,
+            select,
+            .no-print {
+                display: none !important;
+            }
+            #app-page {
+                display: block !important;
+            }
+            main {
+                display: block !important;
+            }
+            .lg\:col-span-8 {
+                width: 100% !important;
+            }
+            #weekly-grid-container {
+                display: grid !important;
+                grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+                gap: 12px !important;
+            }
+            .glass-card {
+                background: white !important;
+                border: 1px solid #ddd !important;
+                box-shadow: none !important;
+                page-break-inside: avoid;
+            }
+            .glass-card button, 
+            .glass-card .flex.gap-1.justify-end, 
+            .glass-card .w-full.mt-2,
+            .manual-select-container,
+            .attendance-buttons {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-full py-6 px-4 md:px-8 text-slate-800">
+
+    <!-- 1. Magical Login & Registration Front Page -->
+    <div id="login-page" class="max-w-md mx-auto my-6 transition-all duration-500 ease-in-out">
+        <div class="text-center mb-6 floating-magic">
+            <span class="text-6xl block mb-2">🧙‍♂️✨</span>
+            <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 drop-shadow-sm">
+                อาณาจักรเวรประจำวัน
+            </h1>
+            <p class="text-sm font-semibold text-purple-700 mt-2 bg-white/60 px-4 py-1.5 rounded-full inline-block">
+                Classroom Duty Wizard (พร้อมระบบแอดมิน)
+            </p>
+        </div>
+
+        <div class="rainbow-border shadow-2xl">
+            <div class="bg-white rounded-[1.3rem] p-6 md:p-8 space-y-5">
+                
+                <!-- Authentication Tabs -->
+                <div class="flex border-b-2 border-purple-100 pb-3 gap-2">
+                    <button id="tab-login" onclick="toggleAuthTab('login')" class="flex-1 text-center py-2 px-2 rounded-xl font-bold text-xs transition-all bg-purple-600 text-white shadow-sm">
+                        🔑 เข้าห้องเรียน
+                    </button>
+                    <button id="tab-register" onclick="toggleAuthTab('register')" class="flex-1 text-center py-2 px-2 rounded-xl font-bold text-xs transition-all bg-slate-100 text-slate-600 hover:bg-purple-50">
+                        📝 ลงทะเบียน
+                    </button>
+                    <button id="tab-admin" onclick="toggleAuthTab('admin')" class="flex-1 text-center py-2 px-2 rounded-xl font-bold text-xs transition-all bg-slate-100 text-slate-600 hover:bg-rose-50">
+                        🛡️ แอดมินครู
+                    </button>
+                </div>
+
+                <!-- LOGIN FORM -->
+                <form id="login-form" onsubmit="handleLogin(event)" class="space-y-4">
+                    <div class="text-center pb-2 border-b border-purple-50">
+                        <h2 class="text-md font-bold text-slate-700">เข้าใช้งานห้องเรียนเวทมนตร์</h2>
+                        <p class="text-xs text-slate-400 mt-1">กรอกชั้นเรียนและรหัสผ่านเพื่อจัดการเวร</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">ชั้นเรียน / ห้องเรียน</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-lg">🏫</span>
+                            <input type="text" id="login-classroom" required placeholder="เช่น ป.3/1, ม.6..." 
+                                class="w-full bg-slate-50 border-2 border-purple-100 rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-purple-500 font-semibold text-sm" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">รหัสผ่านผ่านประตู</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-lg">🔑</span>
+                            <input type="password" id="login-passcode" required placeholder="รหัสผ่าน (ห้องทดสอบ: 1234)" 
+                                class="w-full bg-slate-50 border-2 border-purple-100 rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-purple-500 font-semibold text-sm" />
+                        </div>
+                    </div>
+
+                    <div class="bg-purple-50/70 border border-purple-100 rounded-xl p-3 text-xs text-purple-800 leading-relaxed">
+                        💡 <strong>ห้องทดสอบ:</strong> ใช้ห้อง <strong>ป.3/1</strong> (รหัส <strong>1234</strong>) หรือ <strong>ม.6</strong> (รหัส <strong>6666</strong>)
+                    </div>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 text-white font-extrabold py-3 px-6 rounded-xl shadow-lg transition-transform flex items-center justify-center gap-2 text-md">
+                        ✨ เข้าสู่ระบบห้องเรียน ✨
+                    </button>
+                </form>
+
+                <!-- REGISTER FORM -->
+                <form id="register-form" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+                    <div class="text-center pb-2 border-b border-purple-50">
+                        <h2 class="text-md font-bold text-slate-700">สร้างห้องเรียนเวทมนตร์ใหม่</h2>
+                        <p class="text-xs text-slate-400 mt-1">ลงทะเบียนข้อมูลห้องเรียนเพื่อเริ่มจัดตารางเวร</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">ชั้นเรียน / ห้องเรียน</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-lg">🏫</span>
+                            <input type="text" id="reg-classroom" required placeholder="เช่น ป.5/2, ม.1/3..." 
+                                class="w-full bg-slate-50 border-2 border-purple-100 rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-purple-500 font-semibold text-sm" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">ชื่อหัวหน้าห้อง</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-lg">👑</span>
+                            <input type="text" id="reg-leader" required placeholder="เช่น น้องกวิน..." 
+                                class="w-full bg-slate-50 border-2 border-purple-100 rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-purple-500 font-semibold text-sm" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">ตั้งรหัสผ่านผ่านประตู</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-lg">🔑</span>
+                            <input type="password" id="reg-passcode" required placeholder="ตั้งรหัสผ่านสำหรับห้องนี้" 
+                                class="w-full bg-slate-50 border-2 border-purple-100 rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-purple-500 font-semibold text-sm" />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">ยืนยันรหัสผ่านอีกครั้ง</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-lg">🛡️</span>
+                            <input type="password" id="reg-confirm-passcode" required placeholder="ยืนยันรหัสผ่าน" 
+                                class="w-full bg-slate-50 border-2 border-purple-100 rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-purple-500 font-semibold text-sm" />
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 text-white font-extrabold py-3 px-6 rounded-xl shadow-lg transition-transform flex items-center justify-center gap-2 text-md">
+                        📝 ลงทะเบียนห้องเรียน ✨
+                    </button>
+                </form>
+
+                <!-- ADMIN LOGIN FORM -->
+                <form id="admin-login-form" onsubmit="handleAdminLogin(event)" class="space-y-4 hidden">
+                    <div class="text-center pb-2 border-b border-rose-50">
+                        <h2 class="text-md font-bold text-rose-700">🛡️ เข้าสู่ระบบผู้ดูแลระบบสูงสุด (Admin)</h2>
+                        <p class="text-xs text-slate-400 mt-1">สำหรับคุณครูประจำวิชาหรือผู้ดูแลโรงเรียน</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">รหัสผ่านแอดมิน</label>
+                        <div class="relative">
+                            <span class="absolute left-3 top-2.5 text-lg">🛡️</span>
+                            <input type="password" id="admin-passcode" required placeholder="รหัสผ่านแอดมิน (ค่าเริ่มต้น: teacher99)" 
+                                class="w-full bg-slate-50 border-2 border-rose-100 rounded-xl pl-10 pr-4 py-2.5 focus:outline-none focus:border-rose-500 font-semibold text-sm" />
+                        </div>
+                    </div>
+
+                    <div class="bg-rose-50/70 border border-rose-100 rounded-xl p-3 text-xs text-rose-800 leading-relaxed">
+                        🔑 <strong>รหัสผ่านแอดมินสาธิต:</strong> <code>teacher99</code> (คุณสามารถเปลี่ยนได้ในการตั้งค่าแอดมิน)
+                    </div>
+
+                    <button type="submit" class="w-full bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-700 text-white font-extrabold py-3 px-6 rounded-xl shadow-lg transition-transform flex items-center justify-center gap-2 text-md">
+                        🛡️ เข้าสู่หน้าจอแอดมินครู ✨
+                    </button>
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Main Classroom Dashboard Application -->
+    <div id="app-page" class="hidden max-w-7xl mx-auto transition-all duration-500 ease-in-out">
+        <!-- Header -->
+        <header class="text-center mb-6">
+            <div class="inline-block transform hover:scale-105 transition-transform duration-300">
+                <h1 class="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 drop-shadow-sm mb-2">
+                    🧹 เวทมนตร์เวรประจำวัน 🌟
+                </h1>
+                <div class="flex flex-col md:flex-row items-center justify-center gap-2 mt-2">
+                    <span id="classroom-badge" class="text-md font-extrabold text-white bg-purple-600 px-4 py-1.5 rounded-full shadow-sm">
+                        ห้องเรียน: ป.3/1
+                    </span>
+                    <span id="leader-badge" class="text-sm font-bold text-purple-700 bg-white/80 px-4 py-1.5 rounded-full shadow-sm border border-purple-100">
+                        หัวหน้าห้อง: สมชาย
+                    </span>
+                    <button onclick="handleLogout()" class="print-hide text-xs bg-rose-500 hover:bg-rose-600 active:scale-95 text-white font-bold px-3 py-1.5 rounded-full shadow transition-all flex items-center gap-1">
+                        🚪 ออกจากระบบ
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Layout Split Grid -->
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- Left Side: Student List, Custom Duties, Notepad (lg:col-span-4) -->
+            <section class="lg:col-span-4 space-y-4 print-hide">
+                
+                <!-- Tidy Control Box with Tabs -->
+                <div class="glass-card rounded-2xl p-5 shadow-md border-t-4 border-purple-500">
+                    <!-- Tab Buttons -->
+                    <div class="flex border-b border-purple-100 pb-3 mb-4 gap-1">
+                        <button onclick="switchTab('students-tab')" id="btn-students-tab" class="flex-1 text-center py-2 px-1 rounded-xl font-bold text-xs transition-all bg-purple-600 text-white shadow-sm">
+                            👥 นักเรียน
+                        </button>
+                        <button onclick="switchTab('duties-tab')" id="btn-duties-tab" class="flex-1 text-center py-2 px-1 rounded-xl font-bold text-xs transition-all bg-slate-100 text-slate-600 hover:bg-purple-50">
+                            ⚙️ งานเวร
+                        </button>
+                        <button onclick="switchTab('notes-tab')" id="btn-notes-tab" class="flex-1 text-center py-2 px-1 rounded-xl font-bold text-xs transition-all bg-slate-100 text-slate-600 hover:bg-purple-50">
+                            📜 โน๊ต
+                        </button>
+                    </div>
+
+                    <!-- TAB 1: Student Management -->
+                    <div id="tab-content-students" class="space-y-4">
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">เพิ่มรายชื่อจอมเวทย์</label>
+                                <span id="student-count" class="bg-purple-100 text-purple-700 px-2.5 py-0.5 rounded-full text-xs font-bold">0 คน</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <select id="student-emoji" class="bg-white border-2 border-purple-100 rounded-xl px-2 py-2 text-xl focus:outline-none focus:border-purple-500 cursor-pointer" title="เลือกไอคอนเด็กๆ">
+                                    <option>🐱</option><option>🐶</option><option>🦊</option><option>🐰</option>
+                                    <option>🐯</option><option>🦁</option><option>🐨</option><option>🐼</option>
+                                    <option>🐹</option><option>🐷</option><option>🐸</option><option>🐵</option>
+                                    <option>🐥</option><option>🦉</option><option>🦖</option><option>🦄</option>
+                                    <option>🧙‍♂️</option><option>🧙‍♀️</option><option>🦸‍♂️</option><option>🦸‍♀️</option>
+                                    <option>🚀</option><option>👽</option><option>👻</option><option>🍀</option>
+                                </select>
+                                <input type="text" id="student-name" placeholder="ชื่อหรือเลขที่ เช่น น้องซัน..." 
+                                       class="flex-1 bg-white border-2 border-purple-100 rounded-xl px-4 py-2 focus:outline-none focus:border-purple-500 font-medium text-sm"
+                                       onkeydown="if(event.key === 'Enter') addStudent()">
+                                <button onclick="addStudent()" class="bg-purple-600 hover:bg-purple-700 active:scale-95 text-white font-bold px-4 py-2 rounded-xl transition-all shadow-md flex items-center justify-center" title="เพิ่มรายชื่อ">
+                                    ➕
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Smart Option Toggle -->
+                        <div class="bg-purple-50/50 border border-purple-100 rounded-xl p-3">
+                            <label class="flex items-start gap-2 cursor-pointer select-none">
+                                <input type="checkbox" id="smart-random" checked class="mt-0.5 w-4 h-4 text-purple-600 border-purple-300 rounded focus:ring-purple-500">
+                                <span class="text-xs font-medium text-slate-600 leading-relaxed">
+                                    🧠 <span class="text-purple-700 font-bold">สุ่มอัจฉริยะ (ยุติธรรม):</span> คัดเลือกจอมเวทย์ที่มีเวรสะสมน้อยที่สุดก่อน
+                                </span>
+                            </label>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button onclick="loadSampleData()" class="flex-1 text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold py-2.5 px-3 rounded-xl border border-amber-200 transition-colors flex items-center justify-center gap-1">
+                                ✨ เติมรายชื่อตัวอย่าง
+                            </button>
+                            <button onclick="triggerClearStudents()" class="text-xs bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold py-2.5 px-3 rounded-xl border border-rose-100 transition-colors flex items-center justify-center gap-1">
+                                🗑️ ล้างทั้งหมด
+                            </button>
+                        </div>
+
+                        <hr class="border-purple-50">
+
+                        <!-- Student List Scroll Area with Leaderboard Sorting Toggle -->
+                        <div>
+                            <div class="flex justify-between items-center mb-2">
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">รายชื่อและคะแนนสะสม</h3>
+                                <div class="flex gap-1">
+                                    <button onclick="setSortMode('name')" id="sort-name-btn" class="text-[10px] bg-purple-600 text-white font-bold px-2 py-1 rounded-md transition-all">
+                                        🔤 ชื่อ
+                                    </button>
+                                    <button onclick="setSortMode('score')" id="sort-score-btn" class="text-[10px] bg-slate-200 text-slate-600 font-bold px-2 py-1 rounded-md transition-all">
+                                        🏆 คะแนน
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="students-container" class="space-y-1.5 max-h-[240px] overflow-y-auto pr-1">
+                                <div id="no-students-message" class="text-center py-8 text-slate-400 font-medium">
+                                    <div class="text-3xl mb-1">🎈</div>
+                                    <p class="text-xs font-bold">ไม่มีรายชื่อจอมเวทย์ในขณะนี้</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: Custom Duty Settings -->
+                    <div id="tab-content-duties" class="hidden space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">เพิ่มประเภทงานเวร</label>
+                            <div class="flex gap-2">
+                                <select id="duty-emoji" class="bg-white border-2 border-pink-100 rounded-xl px-2 py-2 text-xl focus:outline-none focus:border-pink-500 cursor-pointer" title="เลือกอิโมจิเวร">
+                                    <option>🧹</option><option>🧽</option><option>🗑️</option><option>🪑</option>
+                                    <option>🔌</option><option>🌱</option><option>📚</option><option>🥛</option>
+                                    <option>🚪</option><option>🧼</option><option>🍽️</option><option>🎨</option>
+                                    <option>🐟</option><option>🎒</option><option>⛅</option><option>🔑</option>
+                                </select>
+                                <input type="text" id="duty-name-input" placeholder="เช่น รดน้ำต้นไม้..." 
+                                       class="flex-1 bg-white border-2 border-pink-100 rounded-xl px-4 py-2 focus:outline-none focus:border-pink-500 font-medium text-sm"
+                                       onkeydown="if(event.key === 'Enter') addCustomDuty()">
+                                <button onclick="addCustomDuty()" class="bg-pink-600 hover:bg-pink-700 active:scale-95 text-white font-bold px-4 py-2 rounded-xl transition-all shadow-md flex items-center justify-center">
+                                    ➕
+                                </button>
+                            </div>
+                        </div>
+
+                        <hr class="border-pink-50">
+
+                        <div>
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">งานเวรที่เปิดใช้งาน</h3>
+                            <div id="custom-duties-container" class="space-y-1.5 max-h-[300px] overflow-y-auto pr-1"></div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: Magical Notepad Scroll -->
+                    <div id="tab-content-notes" class="hidden space-y-4">
+                        <div class="parchment p-4 rounded-xl border border-amber-300 relative overflow-hidden">
+                            <div class="absolute -top-3 -right-3 text-5xl opacity-15">📜</div>
+                            <label class="block text-xs font-extrabold text-amber-800 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                                📜 คัมภีร์บันทึกเวทมนตร์
+                            </label>
+                            <p class="text-[10px] text-amber-700/80 mb-3 leading-relaxed">
+                                จดบันทึกคำทำนาย ความประพฤติ หรือประกาศสิทธิ์เวทมนตร์ประจำวัน (บันทึกออโต้อัตโนมัติ)
+                            </p>
+                            <textarea id="magical-notepad" onkeyup="saveMagicalNotes(this.value)" rows="8" placeholder="เขียนข้อความหรือบันทึกที่นี่..."
+                                      class="w-full bg-amber-50/50 border border-amber-300 rounded-xl p-3 text-xs font-semibold text-amber-900 placeholder-amber-700/50 focus:outline-none focus:border-amber-500 resize-none"></textarea>
+                            
+                            <div class="mt-3 flex gap-1.5 flex-wrap">
+                                <button onclick="insertPresetSpell('วันนี้ทุกคนทำหน้าที่ได้ยอดเยี่ยมมาก! ได้แต้มพลังไปคนละ 10 แต้ม ✨')" class="text-[9px] bg-amber-600 hover:bg-amber-700 text-white font-bold py-1 px-2 rounded transition-all">
+                                    📝 ชมเชยเวรวันนี้
+                                </button>
+                                <button onclick="insertPresetSpell('ตักเตือนผู้พิทักษ์เวรที่ไม่ยอมทำความสะอาด ขอร้องให้เข้ามาซ่อมแซมเวรด้วยนะ 🧹')" class="text-[9px] bg-amber-600 hover:bg-amber-700 text-white font-bold py-1 px-2 rounded transition-all">
+                                    ⚠️ แจ้งตักเตือน
+                                </button>
+                                <button onclick="clearMagicalNotes()" class="text-[9px] bg-rose-500 hover:bg-rose-600 text-white font-bold py-1 px-2 rounded transition-all">
+                                    🗑️ ล้างกระดาษ
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Side: Weekly Duty Schedule Grid (lg:col-span-8) -->
+            <section class="lg:col-span-8 space-y-4">
+                <div class="glass-card rounded-2xl p-4 shadow-sm flex flex-wrap gap-4 items-center justify-between print-hide">
+                    <div class="flex items-center gap-2">
+                        <span class="text-2xl animate-pulse">🗓️</span>
+                        <div>
+                            <span class="font-black text-slate-700 text-lg block">ตารางกิจกรรมเวรประจำสัปดาห์</span>
+                            <span class="text-xs text-slate-500">คลิก "สุ่มด่วน" หรือเลือกรายชื่อ และกดประเมินผลเพื่อเพิ่ม/ลดคะแนน</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="triggerResetAssignments()" class="bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold px-4 py-2 rounded-xl transition-all shadow-md text-sm flex items-center gap-1.5">
+                            🔄 รีเซ็ตตาราง
+                        </button>
+                        <button onclick="window.print()" class="bg-sky-500 hover:bg-sky-600 active:scale-95 text-white font-bold px-4 py-2 rounded-xl transition-all shadow-md text-sm flex items-center gap-1.5">
+                            🖨️ พิมพ์ / PDF
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 5-Day Weekly Grid -->
+                <div id="weekly-grid-container" class="grid grid-cols-1 md:grid-cols-5 gap-4"></div>
+            </section>
+        </main>
+    </div>
+
+    <!-- 3. ADMIN DASHBOARD PAGE (ระบบแอดมินสำหรับคุณครู) -->
+    <div id="admin-page" class="hidden max-w-6xl mx-auto my-4 transition-all duration-500 ease-in-out">
+        <header class="glass-card rounded-3xl p-6 mb-6 shadow-xl border-t-8 border-rose-600 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="text-3xl">🛡️</span>
+                    <h1 class="text-2xl font-black text-rose-800">ศูนย์บัญชาการแอดมินคุณครู (Teacher Control Center)</h1>
+                </div>
+                <p class="text-xs text-slate-500">จัดการภาพรวมทุกห้องเรียน ตรวจสอบคะแนนความประพฤติ และตั้งค่าความปลอดภัยระบบ</p>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="exitAdminPage()" class="bg-slate-700 hover:bg-slate-800 active:scale-95 text-white font-bold px-4 py-2 rounded-xl text-sm shadow transition-all flex items-center gap-1.5">
+                    ⬅️ กลับหน้าหลัก
+                </button>
+            </div>
+        </header>
+
+        <!-- Admin Dashboard Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="glass-card rounded-2xl p-5 border-l-4 border-purple-500 shadow-sm">
+                <span class="text-xs font-bold text-slate-400 uppercase">ห้องเรียนที่ลงทะเบียนทั้งหมด</span>
+                <div id="admin-stat-classes" class="text-3xl font-black text-purple-700 mt-1">0 ห้อง</div>
+            </div>
+            <div class="glass-card rounded-2xl p-5 border-l-4 border-emerald-500 shadow-sm">
+                <span class="text-xs font-bold text-slate-400 uppercase">นักเรียนในระบบทั้งหมด</span>
+                <div id="admin-stat-students" class="text-3xl font-black text-emerald-700 mt-1">0 คน</div>
+            </div>
+            <div class="glass-card rounded-2xl p-5 border-l-4 border-rose-500 shadow-sm">
+                <span class="text-xs font-bold text-slate-400 uppercase">สถานะระบบแอดมิน</span>
+                <div class="text-xl font-black text-rose-600 mt-1 flex items-center gap-1">
+                    🟢 ปลอดภัยพร้อมใช้งาน
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Management Tabs Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left: Classrooms Master List -->
+            <div class="lg:col-span-7 space-y-4">
+                <div class="glass-card rounded-2xl p-5 shadow-md">
+                    <div class="flex justify-between items-center mb-4 pb-2 border-b border-rose-100">
+                        <h2 class="text-sm font-bold text-rose-900 flex items-center gap-1.5">
+                            🏫 รายชื่อห้องเรียนทั้งหมดในระบบโรงเรียน
+                        </h2>
+                        <button onclick="openNewClassModal()" class="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs py-1.5 px-3 rounded-xl shadow transition-all">
+                            ➕ เพิ่มห้องเรียนใหม่
+                        </button>
+                    </div>
+
+                    <div id="admin-classrooms-list" class="space-y-2.5 max-h-[400px] overflow-y-auto pr-1">
+                        <!-- Populated dynamically -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Admin Password & System Tools -->
+            <div class="lg:col-span-5 space-y-4">
+                <div class="glass-card rounded-2xl p-5 shadow-md border-t-4 border-rose-500">
+                    <h2 class="text-sm font-bold text-rose-900 mb-3 flex items-center gap-1.5">
+                        🛡️ ตั้งค่าความปลอดภัยแอดมิน
+                    </h2>
+                    <form onsubmit="handleUpdateAdminPasscode(event)" class="space-y-3">
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-500 mb-1">เปลี่ยนรหัสผ่านแอดมินใหม่</label>
+                            <input type="password" id="new-admin-pass" required placeholder="กรอกรหัสผ่านแอดมินใหม่" 
+                                class="w-full bg-white border border-rose-200 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:border-rose-500" />
+                        </div>
+                        <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-4 rounded-xl text-xs transition-all shadow">
+                            💾 บันทึกรหัสผ่านแอดมินใหม่
+                        </button>
+                    </form>
+
+                    <hr class="my-4 border-rose-100">
+
+                    <h3 class="text-xs font-bold text-rose-900 mb-2">⚙️ เครื่องมือจัดการข้อมูลด่วน</h3>
+                    <div class="space-y-2">
+                        <button onclick="triggerAdminResetAllScores()" class="w-full text-left bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 font-bold p-2.5 rounded-xl text-xs transition-colors flex items-center justify-between">
+                            <span>🏆 รีเซ็ตคะแนนนักเรียนทุกห้องเป็น 100</span>
+                            <span>⚡</span>
+                        </button>
+                        <button onclick="triggerAdminClearAllData()" class="w-full text-left bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-bold p-2.5 rounded-xl text-xs transition-colors flex items-center justify-between">
+                            <span>🗑️ ล้างข้อมูลห้องเรียนทั้งหมดในระบบ</span>
+                            <span>⚠️</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Fun Fullscreen Randomizer Overlay Modal -->
+    <div id="randomizer-modal" class="fixed inset-0 bg-slate-900/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <canvas id="confetti-canvas" class="absolute inset-0 pointer-events-none z-10"></canvas>
+        
+        <div id="modal-card" class="bg-white rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl relative border-4 border-purple-500 transform scale-95 transition-transform duration-300 z-20 text-center overflow-hidden">
+            <div class="absolute -top-12 -left-12 w-32 h-32 bg-purple-200 rounded-full blur-2xl opacity-40"></div>
+            <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-pink-200 rounded-full blur-2xl opacity-40"></div>
+
+            <div class="relative z-10">
+                <div class="text-[10px] font-black text-purple-600 bg-purple-100 rounded-full py-1 px-4 inline-block mb-3 uppercase tracking-widest">
+                    🪄 วงล้อเวทมนตร์กำลังค้นหา...
+                </div>
+                <h3 id="target-duty-title" class="text-2xl font-black text-slate-800 mb-2">
+                    🧹 กวาดพื้นห้องเรียน
+                </h3>
+
+                <div class="my-6 relative h-36 flex items-center justify-center bg-gradient-to-tr from-purple-50 to-pink-50 rounded-2xl border-2 border-purple-100 overflow-hidden shadow-inner">
+                    <div class="absolute inset-x-0 top-0 flex justify-center z-10">
+                        <div class="w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-t-[16px] border-t-purple-600"></div>
+                    </div>
+                    <div class="h-16 flex items-center justify-center w-full">
+                        <div id="spinner-names-wrap" class="flex flex-col items-center">
+                            <div class="text-3xl font-extrabold text-purple-700 py-2 flex items-center gap-2">
+                                <span class="text-4xl animate-bounce">✨</span> 
+                                <span id="spinning-student-name">คัดเลือก...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="winner-reveal-badge" class="hidden mb-6 animate-pulse">
+                    <span class="bg-emerald-100 text-emerald-800 font-extrabold px-6 py-2 rounded-full text-md shadow-md border-2 border-emerald-300">
+                        🎉 ขอแสดงความยินดีด้วยจ้า! 🎉
+                    </span>
+                </div>
+
+                <div class="flex gap-3 justify-center">
+                    <button id="modal-stop-btn" onclick="stopSpin()" class="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 active:scale-95 text-white font-black text-md py-3 px-8 rounded-2xl shadow-lg transition-transform flex items-center gap-2">
+                        🛑 หยุดวงล้อ!
+                    </button>
+                    <button id="modal-close-btn" onclick="closeModal()" class="hidden bg-slate-200 hover:bg-slate-300 active:scale-95 text-slate-700 font-bold py-3 px-8 rounded-2xl transition-transform">
+                        ตกลง
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Dialog Alert Banner -->
+    <div id="custom-alert-container" class="fixed top-6 left-1/2 transform -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="confirm-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl border-t-8 border-amber-500 text-center transform scale-95 transition-transform duration-200">
+            <span class="text-4xl block mb-2">🤔🔮</span>
+            <h3 class="text-lg font-bold text-slate-800 mb-2">คำถามเวทมนตร์</h3>
+            <p id="confirm-message" class="text-sm text-slate-600 mb-6">คุณแน่ใจหรือไม่ที่จะทำสิ่งนี้?</p>
+            <div class="flex gap-3 justify-center">
+                <button id="confirm-yes-btn" class="bg-amber-500 hover:bg-amber-600 text-white font-bold py-2 px-5 rounded-xl text-sm transition-all shadow-md">
+                    ใช่, ดำเนินการเลย
+                </button>
+                <button onclick="closeConfirmModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2 px-5 rounded-xl text-sm transition-all">
+                    ยกเลิก
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Engine -->
+    <script>
+        const DAYS = ['จันทร์', 'อังคาร', 'พุธ', 'พฤหัสฯ', 'ศุกร์'];
+        
+        const COLOR_SCHEMES = [
+            { bg: 'bg-amber-50', text: 'text-amber-800', border: 'border-amber-300', hover: 'hover:bg-amber-100/70' },
+            { bg: 'bg-cyan-50', text: 'text-cyan-800', border: 'border-cyan-300', hover: 'hover:bg-cyan-100/70' },
+            { bg: 'bg-rose-50', text: 'text-rose-800', border: 'border-rose-300', hover: 'hover:bg-rose-100/70' },
+            { bg: 'bg-emerald-50', text: 'text-emerald-800', border: 'border-emerald-300', hover: 'hover:bg-emerald-100/70' },
+            { bg: 'bg-indigo-50', text: 'text-indigo-800', border: 'border-indigo-300', hover: 'hover:bg-indigo-100/70' },
+            { bg: 'bg-purple-50', text: 'text-purple-800', border: 'border-purple-300', hover: 'hover:bg-purple-100/70' },
+            { bg: 'bg-pink-50', text: 'text-pink-800', border: 'border-pink-300', hover: 'hover:bg-pink-100/70' },
+            { bg: 'bg-orange-50', text: 'text-orange-800', border: 'border-orange-300', hover: 'hover:bg-orange-100/70' }
+        ];
+
+        const DEFAULT_DUTIES = [
+            { id: 'sweep', name: 'สลัดฝุ่นกวาดพื้น', icon: '🧹', color: 'bg-amber-50 text-amber-800 border-amber-300 hover:bg-amber-100/70' },
+            { id: 'board', name: 'ลบกระดานวิเศษ', icon: '🧽', color: 'bg-cyan-50 text-cyan-800 border-cyan-300 hover:bg-cyan-100/70' },
+            { id: 'trash', name: 'ฮีโร่กู้ถังขยะ', icon: '🗑️', color: 'bg-rose-50 text-rose-800 border-rose-300 hover:bg-rose-100/70' },
+            { id: 'desk', name: 'จัดระเบียบเก้าอี้', icon: '🪑', color: 'bg-emerald-50 text-emerald-800 border-emerald-300 hover:bg-emerald-100/70' },
+            { id: 'utility', name: 'ปิดพัดลมและไฟ', icon: '🔌', color: 'bg-indigo-50 text-indigo-800 border-indigo-300 hover:bg-indigo-100/70' }
+        ];
+
+        let state = {
+            classroom: '',
+            leaderName: '',
+            students: [],
+            duties: [],
+            assignments: {},
+            attendance: {},
+            notes: '',
+            sortMode: 'name'
+        };
+
+        // ============================================================
+        // ☁️ Google Sheets Cloud Sync (ไม่บังคับใช้)
+        // วาง Web app URL จาก Google Apps Script (classroom-duty-sync.gs)
+        // ไว้ในตัวแปร CLOUD_API_URL ด้านล่าง ถ้าปล่อยว่างไว้ แอปจะทำงาน
+        // ด้วย localStorage อย่างเดียวเหมือนเดิมทุกประการ ไม่มีผลกระทบใดๆ
+        // ============================================================
+        const CLOUD_API_URL = 'https://script.google.com/macros/s/AKfycby.../exec'; // เช่น 'https://script.google.com/macros/s/xxxxxxxxxxxx/exec'
+
+        function cloudEnabled_() {
+            return !!CLOUD_API_URL && CLOUD_API_URL.startsWith('https://');
+        }
+
+        async function cloudSet(key, value) {
+            if (!cloudEnabled_()) return;
+            try {
+                await fetch(CLOUD_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // กัน CORS preflight
+                    body: JSON.stringify({ action: 'set', key, value })
+                });
+            } catch (e) {
+                console.warn('cloudSet failed for', key, e);
+            }
+        }
+
+        async function cloudGet(key) {
+            if (!cloudEnabled_()) return null;
+            try {
+                const res = await fetch(`${CLOUD_API_URL}?action=get&key=${encodeURIComponent(key)}`);
+                const data = await res.json();
+                return data && data.ok ? data.value : null;
+            } catch (e) {
+                console.warn('cloudGet failed for', key, e);
+                return null;
+            }
+        }
+
+        async function cloudDelete(key) {
+            if (!cloudEnabled_()) return;
+            try {
+                await fetch(CLOUD_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'delete', key })
+                });
+            } catch (e) {
+                console.warn('cloudDelete failed for', key, e);
+            }
+        }
+
+        async function cloudClearAll() {
+            if (!cloudEnabled_()) return;
+            try {
+                await fetch(CLOUD_API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: 'clearAll' })
+                });
+            } catch (e) {
+                console.warn('cloudClearAll failed', e);
+            }
+        }
+
+        // ดึงค่าจากคลาวด์มาเขียนทับ localStorage คีย์นี้ (เงียบๆ ถ้าไม่เชื่อมต่อ/ล้มเหลว)
+        async function syncKeyFromCloud(key) {
+            const value = await cloudGet(key);
+            if (value !== null && value !== undefined) {
+                localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+            }
+            return value;
+        }
+
+        // อัปโหลดค่าปัจจุบันของคีย์นี้ใน localStorage ขึ้นคลาวด์ (ไม่รอผลลัพธ์)
+        function syncKeyToCloud(key) {
+            const raw = localStorage.getItem(key);
+            if (raw === null) return;
+            let value;
+            try { value = JSON.parse(raw); } catch (e) { value = raw; }
+            cloudSet(key, value);
+        }
+
+        // ดึงข้อมูลทั้ง 5 คีย์ของห้องเรียนหนึ่งห้องจากคลาวด์มาเขียนทับ localStorage
+        async function syncClassroomFromCloud(classroom) {
+            if (!cloudEnabled_() || !classroom) return;
+            const classroomKey = classroom.replace(/[^a-zA-Z0-9ก-๙]/g, '_');
+            await Promise.all([
+                syncKeyFromCloud(`wizard_${classroomKey}_students`),
+                syncKeyFromCloud(`wizard_${classroomKey}_assignments`),
+                syncKeyFromCloud(`wizard_${classroomKey}_attendance`),
+                syncKeyFromCloud(`wizard_${classroomKey}_types`),
+                syncKeyFromCloud(`wizard_${classroomKey}_notes`)
+            ]);
+        }
+
+        // Helper: Custom Confirm Dialog
+        let confirmPromiseResolver = null;
+        function customConfirm(message) {
+            document.getElementById('confirm-message').innerText = message;
+            const modal = document.getElementById('confirm-modal');
+            const card = modal.querySelector('div');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            card.classList.remove('scale-95');
+            card.classList.add('scale-100');
+
+            return new Promise((resolve) => {
+                confirmPromiseResolver = resolve;
+                document.getElementById('confirm-yes-btn').onclick = function() {
+                    hideConfirmModal();
+                    resolve(true);
+                    confirmPromiseResolver = null;
+                };
+            });
+        }
+
+        function hideConfirmModal() {
+            const modal = document.getElementById('confirm-modal');
+            const card = modal.querySelector('div');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            card.classList.remove('scale-100');
+            card.classList.add('scale-95');
+        }
+
+        function closeConfirmModal() {
+            hideConfirmModal();
+            if (confirmPromiseResolver) {
+                confirmPromiseResolver(false);
+                confirmPromiseResolver = null;
+            }
+        }
+
+        function alertBox(text, isError = true) {
+            const container = document.getElementById('custom-alert-container');
+            const banner = document.createElement('div');
+            const bgClass = isError ? 'bg-rose-600' : 'bg-emerald-600';
+            const icon = isError ? '⚠️' : '🎉';
+            banner.className = `transform translate-y-0 ${bgClass} text-white font-bold py-3 px-6 rounded-2xl shadow-xl flex items-center gap-2 pointer-events-auto transition-all duration-300 opacity-0 z-[100] text-sm`;
+            banner.innerHTML = `${icon} <span>${text}</span>`;
+            
+            container.appendChild(banner);
+            setTimeout(() => {
+                banner.classList.remove('opacity-0');
+                banner.classList.add('translate-y-2');
+            }, 50);
+
+            setTimeout(() => {
+                banner.classList.add('opacity-0');
+                banner.classList.remove('translate-y-2');
+                setTimeout(() => banner.remove(), 300);
+            }, 3000);
+        }
+
+        // Toggle authentication tabs
+        function toggleAuthTab(tab) {
+            const btnLogin = document.getElementById('tab-login');
+            const btnReg = document.getElementById('tab-register');
+            const btnAdmin = document.getElementById('tab-admin');
+
+            const formLogin = document.getElementById('login-form');
+            const formReg = document.getElementById('register-form');
+            const formAdmin = document.getElementById('admin-login-form');
+
+            [btnLogin, btnReg, btnAdmin].forEach(b => {
+                b.className = "flex-1 text-center py-2 px-2 rounded-xl font-bold text-xs transition-all bg-slate-100 text-slate-600 hover:bg-purple-50";
+            });
+            [formLogin, formReg, formAdmin].forEach(f => f.classList.add('hidden'));
+
+            if (tab === 'login') {
+                btnLogin.className = "flex-1 text-center py-2 px-2 rounded-xl font-bold text-xs transition-all bg-purple-600 text-white shadow-sm";
+                formLogin.classList.remove('hidden');
+            } else if (tab === 'register') {
+                btnReg.className = "flex-1 text-center py-2 px-2 rounded-xl font-bold text-xs transition-all bg-emerald-600 text-white shadow-sm";
+                formReg.classList.remove('hidden');
+            } else {
+                btnAdmin.className = "flex-1 text-center py-2 px-2 rounded-xl font-bold text-xs transition-all bg-rose-600 text-white shadow-sm";
+                formAdmin.classList.remove('hidden');
+            }
+        }
+
+        function getRegisteredAccounts() {
+            try {
+                const accounts = localStorage.getItem('wizard_registered_accounts');
+                return accounts ? JSON.parse(accounts) : [];
+            } catch(e) {
+                return [];
+            }
+        }
+
+        function saveRegisteredAccounts(accounts) {
+            localStorage.setItem('wizard_registered_accounts', JSON.stringify(accounts));
+            syncKeyToCloud('wizard_registered_accounts');
+        }
+
+        function getAdminPasscode() {
+            return localStorage.getItem('wizard_admin_passcode') || 'teacher99';
+        }
+
+        // Registration Logic
+        async function handleRegister(event) {
+            event.preventDefault();
+            const classroom = document.getElementById('reg-classroom').value.trim();
+            const leader = document.getElementById('reg-leader').value.trim();
+            const passcode = document.getElementById('reg-passcode').value;
+            const confirmPasscode = document.getElementById('reg-confirm-passcode').value;
+
+            if (!classroom || !leader || !passcode) {
+                alertBox('กรุณากรอกข้อมูลลงทะเบียนให้ครบทุกช่องก่อนนะ!');
+                return;
+            }
+
+            if (passcode !== confirmPasscode) {
+                alertBox('รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน กรุณาตรวจสอบอีกครั้ง!');
+                return;
+            }
+
+            await syncKeyFromCloud('wizard_registered_accounts');
+            const accounts = getRegisteredAccounts();
+            const classroomKey = classroom.toLowerCase().replace(/[^a-zA-Z0-9ก-๙]/g, '_');
+            
+            const exist = accounts.some(acc => acc.key === classroomKey);
+            if (exist) {
+                alertBox(`ห้องเรียน ${classroom} ได้เคยลงทะเบียนไว้ในระบบแล้ว! สามารถเข้าใช้ได้ทันที`);
+                return;
+            }
+
+            const newAcc = {
+                key: classroomKey,
+                classroom: classroom,
+                leader: leader,
+                passcode: passcode
+            };
+            accounts.push(newAcc);
+            saveRegisteredAccounts(accounts);
+
+            alertBox(`ลงทะเบียนห้องเรียน ${classroom} สำเร็จแล้ว! กำลังเข้าสู่ระบบ...`, false);
+            playSuccessSound();
+
+            await proceedToLogin(newAcc);
+            document.getElementById('register-form').reset();
+        }
+
+        // Login Logic
+        async function handleLogin(event) {
+            event.preventDefault();
+            const classroom = document.getElementById('login-classroom').value.trim();
+            const passcode = document.getElementById('login-passcode').value;
+
+            if (!classroom || !passcode) {
+                alertBox('กรุณากรอกข้อมูลชั้นเรียนและรหัสผ่านผ่านประตูด้วยนะคะ!');
+                return;
+            }
+
+            await syncKeyFromCloud('wizard_registered_accounts');
+            const accounts = getRegisteredAccounts();
+            const classroomKey = classroom.toLowerCase().replace(/[^a-zA-Z0-9ก-๙]/g, '_');
+
+            let matchedAccount = accounts.find(acc => acc.key === classroomKey && acc.passcode === passcode);
+
+            // Fallbacks for Demo Classes
+            if (!matchedAccount && classroom === "ป.3/1" && passcode === "1234") {
+                matchedAccount = { key: 'ป_3_1', classroom: 'ป.3/1', leader: 'สมชาย', passcode: '1234' };
+                accounts.push(matchedAccount);
+                saveRegisteredAccounts(accounts);
+            } else if (!matchedAccount && classroom === "ม.6" && passcode === "6666") {
+                matchedAccount = { key: 'ม_6', classroom: 'ม.6', leader: 'ก้องเกียรติ', passcode: '6666' };
+                accounts.push(matchedAccount);
+                saveRegisteredAccounts(accounts);
+            }
+
+            if (!matchedAccount) {
+                alertBox('ไม่พบข้อมูลห้องเรียนนี้ หรือรหัสผ่านไม่ถูกต้อง!');
+                return;
+            }
+
+            await proceedToLogin(matchedAccount);
+        }
+
+        // Admin Login Logic
+        async function handleAdminLogin(event) {
+            event.preventDefault();
+            await syncKeyFromCloud('wizard_admin_passcode');
+            const pass = document.getElementById('admin-passcode').value;
+            const correctPass = getAdminPasscode();
+
+            if (pass !== correctPass) {
+                alertBox('รหัสผ่านผู้ดูแลระบบ (Admin) ไม่ถูกต้อง!');
+                return;
+            }
+
+            alertBox('ยินดีต้อนรับเข้าสู่ศูนย์บัญชาการแอดมินคุณครู! 🛡️', false);
+            playSuccessSound();
+
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('admin-page').classList.remove('hidden');
+            await renderAdminDashboard();
+        }
+
+        async function proceedToLogin(account) {
+            state.classroom = account.classroom;
+            state.leaderName = account.leader;
+
+            localStorage.setItem('wizard_duty_current_classroom', account.classroom);
+            localStorage.setItem('wizard_duty_current_leader', account.leader);
+
+            document.getElementById('login-page').classList.add('hidden');
+            document.getElementById('app-page').classList.remove('hidden');
+
+            document.getElementById('classroom-badge').innerText = `ห้องเรียน: ${account.classroom}`;
+            document.getElementById('leader-badge').innerText = `หัวหน้าห้อง: ${account.leader}`;
+
+            await syncClassroomFromCloud(account.classroom);
+            loadClassroomData();
+            recalculateDutiesCount();
+            renderStudents();
+            renderDutySettings();
+            populateDutyGrid();
+
+            playSuccessSound();
+        }
+
+        async function handleLogout() {
+            const confirmed = await customConfirm('ต้องการออกจากระบบใช่หรือไม่?');
+            if (confirmed) {
+                localStorage.removeItem('wizard_duty_current_classroom');
+                localStorage.removeItem('wizard_duty_current_leader');
+                
+                state.classroom = '';
+                state.leaderName = '';
+                state.students = [];
+                state.assignments = {};
+                state.attendance = {};
+                state.notes = '';
+
+                document.getElementById('login-form').reset();
+                document.getElementById('app-page').classList.add('hidden');
+                document.getElementById('admin-page').classList.add('hidden');
+                document.getElementById('login-page').classList.remove('hidden');
+                toggleAuthTab('login');
+            }
+        }
+
+        function exitAdminPage() {
+            document.getElementById('admin-page').classList.add('hidden');
+            document.getElementById('login-page').classList.remove('hidden');
+            toggleAuthTab('login');
+        }
+
+        // Render Admin Dashboard stats & classrooms
+        async function renderAdminDashboard() {
+            await syncKeyFromCloud('wizard_registered_accounts');
+            const accounts = getRegisteredAccounts();
+            
+            // Ensure demo rooms are in accounts list for admin overview
+            if (!accounts.some(a => a.classroom === 'ป.3/1')) {
+                accounts.push({ key: 'ป_3_1', classroom: 'ป.3/1', leader: 'สมชาย', passcode: '1234' });
+            }
+            if (!accounts.some(a => a.classroom === 'ม.6')) {
+                accounts.push({ key: 'ม_6', classroom: 'ม.6', leader: 'ก้องเกียรติ', passcode: '6666' });
+            }
+
+            // ดึงจำนวนนักเรียนล่าสุดของทุกห้องจากคลาวด์มาอัปเดต localStorage (ถ้าเชื่อมต่อไว้)
+            await Promise.all(accounts.map(acc => syncKeyFromCloud(`wizard_${acc.key}_students`)));
+
+            document.getElementById('admin-stat-classes').textContent = `${accounts.length} ห้อง`;
+
+            let totalStudentsCount = 0;
+            accounts.forEach(acc => {
+                try {
+                    const st = localStorage.getItem(`wizard_${acc.key}_students`);
+                    if (st) {
+                        totalStudentsCount += JSON.parse(st).length;
+                    } else if (acc.classroom === 'ป.3/1' || acc.classroom === 'ม.6') {
+                        totalStudentsCount += 5;
+                    }
+                } catch(e) {}
+            });
+            document.getElementById('admin-stat-students').textContent = `${totalStudentsCount} คน`;
+
+            const listContainer = document.getElementById('admin-classrooms-list');
+            listContainer.innerHTML = '';
+
+            accounts.forEach(acc => {
+                let count = 0;
+                try {
+                    const st = localStorage.getItem(`wizard_${acc.key}_students`);
+                    if (st) count = JSON.parse(st).length;
+                } catch(e) {}
+
+                const card = document.createElement('div');
+                card.className = "flex items-center justify-between p-3 rounded-xl bg-white border border-rose-100 hover:border-rose-300 transition-all text-xs";
+                card.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl">🏫</span>
+                        <div>
+                            <span class="font-extrabold text-slate-800 text-sm block">${acc.classroom}</span>
+                            <span class="text-[11px] text-slate-500">หัวหน้า: ${acc.leader || 'ทั่วไป'} | สมาชิก: ${count} คน | รหัสผ่าน: <code class="bg-rose-50 px-1 rounded text-rose-700">${acc.passcode}</code></span>
+                        </div>
+                    </div>
+                    <div class="flex gap-1.5">
+                        <button onclick="adminLoginToClass('${acc.classroom}', '${acc.leader || ''}')" class="bg-purple-600 hover:bg-purple-700 text-white font-bold px-3 py-1.5 rounded-lg shadow transition-all">
+                            🔑 เข้าห้องนี้
+                        </button>
+                        <button onclick="adminDeleteClassroom('${acc.key}')" class="bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold px-2.5 py-1.5 rounded-lg transition-all" title="ลบห้องเรียน">
+                            🗑️
+                        </button>
+                    </div>
+                `;
+                listContainer.appendChild(card);
+            });
+        }
+
+        async function adminLoginToClass(classroom, leader) {
+            document.getElementById('admin-page').classList.add('hidden');
+            await proceedToLogin({ classroom, leader });
+        }
+
+        async function adminDeleteClassroom(key) {
+            const confirmed = await customConfirm('คุณแน่ใจหรือไม่ที่จะลบห้องเรียนนี้ออกจากระบบโรงเรียน?');
+            if (confirmed) {
+                let accounts = getRegisteredAccounts();
+                accounts = accounts.filter(a => a.key !== key);
+                saveRegisteredAccounts(accounts);
+                
+                localStorage.removeItem(`wizard_${key}_students`);
+                localStorage.removeItem(`wizard_${key}_assignments`);
+                localStorage.removeItem(`wizard_${key}_attendance`);
+                localStorage.removeItem(`wizard_${key}_types`);
+                localStorage.removeItem(`wizard_${key}_notes`);
+
+                cloudDelete(`wizard_${key}_students`);
+                cloudDelete(`wizard_${key}_assignments`);
+                cloudDelete(`wizard_${key}_attendance`);
+                cloudDelete(`wizard_${key}_types`);
+                cloudDelete(`wizard_${key}_notes`);
+
+                alertBox("ลบห้องเรียนเรียบร้อยแล้ว", false);
+                await renderAdminDashboard();
+            }
+        }
+
+        async function openNewClassModal() {
+            const classNameInput = prompt("กรอกชื่อชั้นเรียนใหม่ (เช่น ป.2/1):");
+            if (!classNameInput) return;
+            const leaderInput = prompt("ชื่อหัวหน้าห้อง:", "หัวหน้าห้อง");
+            const passInput = prompt("ตั้งรหัสผ่านผ่านประตู:", "1234");
+
+            if (classNameInput && passInput) {
+                const accounts = getRegisteredAccounts();
+                const key = classNameInput.toLowerCase().replace(/[^a-zA-Z0-9ก-๙]/g, '_');
+                
+                accounts.push({
+                    key: key,
+                    classroom: classNameInput,
+                    leader: leaderInput || 'หัวหน้าห้อง',
+                    passcode: passInput
+                });
+                saveRegisteredAccounts(accounts);
+                alertBox(`สร้างห้องเรียน ${classNameInput} สำเร็จ!`, false);
+                await renderAdminDashboard();
+            }
+        }
+
+        function handleUpdateAdminPasscode(event) {
+            event.preventDefault();
+            const newPass = document.getElementById('new-admin-pass').value;
+            if (!newPass) return;
+            localStorage.setItem('wizard_admin_passcode', newPass);
+            syncKeyToCloud('wizard_admin_passcode');
+            alertBox('เปลี่ยนรหัสผ่านแอดมินใหม่สำเร็จแล้ว! 🛡️', false);
+            document.getElementById('new-admin-pass').value = '';
+        }
+
+        async function triggerAdminResetAllScores() {
+            const confirmed = await customConfirm('คุณแน่ใจที่จะรีเซ็ตคะแนนนักเรียนทุกห้องเรียนในระบบโรงเรียนให้กลับเป็น 100 ทั้งหมดหรือไม่?');
+            if (confirmed) {
+                const accounts = getRegisteredAccounts();
+                accounts.forEach(acc => {
+                    try {
+                        const st = localStorage.getItem(`wizard_${acc.key}_students`);
+                        if (st) {
+                            let students = JSON.parse(st);
+                            students.forEach(s => s.score = 100);
+                            localStorage.setItem(`wizard_${acc.key}_students`, JSON.stringify(students));
+                            syncKeyToCloud(`wizard_${acc.key}_students`);
+                        }
+                    } catch(e) {}
+                });
+                alertBox('รีเซ็ตคะแนนนักเรียนทุกห้องเป็น 100 สำเร็จแล้ว!', false);
+            }
+        }
+
+        async function triggerAdminClearAllData() {
+            const confirmed = await customConfirm('⚠️ คำเตือนอันตราย: การล้างข้อมูลทั้งหมดจะลบห้องเรียนและนักเรียนทุกห้องในระบบ (รวมถึงข้อมูลบนคลาวด์ Google Sheets ถ้าเชื่อมต่อไว้)! คุณแน่ใจจริงๆ หรือไม่?');
+            if (confirmed) {
+                localStorage.clear();
+                await cloudClearAll();
+                alertBox('ล้างข้อมูลทั้งหมดในระบบเรียบร้อยแล้ว', false);
+                await renderAdminDashboard();
+            }
+        }
+
+        // Tab Switching Engine
+        function switchTab(tabId) {
+            const btnStudents = document.getElementById('btn-students-tab');
+            const btnDuties = document.getElementById('btn-duties-tab');
+            const btnNotes = document.getElementById('btn-notes-tab');
+            const contentStudents = document.getElementById('tab-content-students');
+            const contentDuties = document.getElementById('tab-content-duties');
+            const contentNotes = document.getElementById('tab-content-notes');
+
+            [btnStudents, btnDuties, btnNotes].forEach(b => {
+                b.className = "flex-1 text-center py-2 px-1 rounded-xl font-bold text-[11px] md:text-xs transition-all bg-slate-100 text-slate-600 hover:bg-purple-50";
+            });
+            [contentStudents, contentDuties, contentNotes].forEach(c => c.classList.add('hidden'));
+
+            if (tabId === 'students-tab') {
+                btnStudents.className = "flex-1 text-center py-2 px-1 rounded-xl font-bold text-[11px] md:text-xs transition-all bg-purple-600 text-white shadow-sm";
+                contentStudents.classList.remove('hidden');
+            } else if (tabId === 'duties-tab') {
+                btnDuties.className = "flex-1 text-center py-2 px-1 rounded-xl font-bold text-[11px] md:text-xs transition-all bg-pink-600 text-white shadow-sm";
+                contentDuties.classList.remove('hidden');
+            } else {
+                btnNotes.className = "flex-1 text-center py-2 px-1 rounded-xl font-bold text-[11px] md:text-xs transition-all bg-amber-500 text-white shadow-sm";
+                contentNotes.classList.remove('hidden');
+            }
+        }
+
+        function setSortMode(mode) {
+            state.sortMode = mode;
+            const sortNameBtn = document.getElementById('sort-name-btn');
+            const sortScoreBtn = document.getElementById('sort-score-btn');
+
+            if (mode === 'name') {
+                sortNameBtn.className = "text-[10px] bg-purple-600 text-white font-bold px-2 py-1 rounded-md transition-all";
+                sortScoreBtn.className = "text-[10px] bg-slate-200 text-slate-600 font-bold px-2 py-1 rounded-md transition-all";
+            } else {
+                sortScoreBtn.className = "text-[10px] bg-purple-600 text-white font-bold px-2 py-1 rounded-md transition-all";
+                sortNameBtn.className = "text-[10px] bg-slate-200 text-slate-600 font-bold px-2 py-1 rounded-md transition-all";
+            }
+            renderStudents();
+        }
+
+        function initEmptyAssignments() {
+            let fresh = {};
+            DAYS.forEach(day => {
+                fresh[day] = { dailyLeader: null };
+                state.duties.forEach(duty => { fresh[day][duty.id] = null; });
+            });
+            return fresh;
+        }
+
+        function initEmptyAttendance() {
+            let fresh = {};
+            DAYS.forEach(day => {
+                fresh[day] = {};
+                state.duties.forEach(duty => { fresh[day][duty.id] = 'pending'; });
+            });
+            return fresh;
+        }
+
+        function syncAssignmentsWithDuties() {
+            DAYS.forEach(day => {
+                if (!state.assignments[day]) state.assignments[day] = {};
+                if (!state.attendance[day]) state.attendance[day] = {};
+                
+                if (state.assignments[day].dailyLeader === undefined) {
+                    state.assignments[day].dailyLeader = null;
+                }
+                
+                state.duties.forEach(duty => {
+                    if (state.assignments[day][duty.id] === undefined) {
+                        state.assignments[day][duty.id] = null;
+                    }
+                    if (state.attendance[day][duty.id] === undefined) {
+                        state.attendance[day][duty.id] = 'pending';
+                    }
+                });
+
+                Object.keys(state.assignments[day]).forEach(dutyId => {
+                    if (dutyId !== 'dailyLeader' && !state.duties.some(d => d.id === dutyId)) {
+                        delete state.assignments[day][dutyId];
+                        delete state.attendance[day][dutyId];
+                    }
+                });
+            });
+        }
+
+        function loadClassroomData() {
+            try {
+                const classroomKey = state.classroom.replace(/[^a-zA-Z0-9ก-๙]/g, '_');
+                
+                const savedStudents = localStorage.getItem(`wizard_${classroomKey}_students`);
+                const savedAssignments = localStorage.getItem(`wizard_${classroomKey}_assignments`);
+                const savedAttendance = localStorage.getItem(`wizard_${classroomKey}_attendance`);
+                const savedDuties = localStorage.getItem(`wizard_${classroomKey}_types`);
+                const savedNotes = localStorage.getItem(`wizard_${classroomKey}_notes`);
+                
+                if (savedDuties) {
+                    state.duties = JSON.parse(savedDuties);
+                } else {
+                    state.duties = [...DEFAULT_DUTIES];
+                }
+
+                if (savedStudents) {
+                    state.students = JSON.parse(savedStudents);
+                    state.students.forEach(s => {
+                        if (s.score === undefined) s.score = 100;
+                    });
+                } else {
+                    if (state.classroom === "ม.6") {
+                        state.students = [
+                            { id: 'm6_1', name: 'ก้องเกียรติ (หัวหน้า)', emoji: '👑', dutiesCount: 0, score: 120 },
+                            { id: 'm6_2', name: 'สัญญากล', emoji: '🧙‍♂️', dutiesCount: 0, score: 100 },
+                            { id: 'm6_3', name: 'วันเพ็ญ', emoji: '👩‍🎓', dutiesCount: 0, score: 110 },
+                            { id: 'm6_4', name: 'อัครเดช', emoji: '🦊', dutiesCount: 0, score: 90 },
+                            { id: 'm6_5', name: 'วิภาดา', emoji: '🐰', dutiesCount: 0, score: 100 }
+                        ];
+                    } else if (state.classroom === "ป.3/1") {
+                        state.students = [
+                            { id: 'p3_1', name: 'สมชาย', emoji: '👦', dutiesCount: 0, score: 100 },
+                            { id: 'p3_2', name: 'สมหญิง', emoji: '👧', dutiesCount: 0, score: 105 },
+                            { id: 'p3_3', name: 'มานะ', emoji: '🧒', dutiesCount: 0, score: 100 },
+                            { id: 'p3_4', name: 'มานี', emoji: '👧', dutiesCount: 0, score: 110 },
+                            { id: 'p3_5', name: 'ปิติ', emoji: '👦', dutiesCount: 0, score: 95 }
+                        ];
+                    } else {
+                        state.students = [];
+                    }
+                }
+
+                if (savedAssignments) {
+                    state.assignments = JSON.parse(savedAssignments);
+                } else {
+                    state.assignments = initEmptyAssignments();
+                }
+
+                if (savedAttendance) {
+                    state.attendance = JSON.parse(savedAttendance);
+                } else {
+                    state.attendance = initEmptyAttendance();
+                }
+
+                state.notes = savedNotes || '';
+                document.getElementById('magical-notepad').value = state.notes;
+
+                syncAssignmentsWithDuties();
+            } catch (e) {
+                state.students = [];
+                state.duties = [...DEFAULT_DUTIES];
+                state.assignments = initEmptyAssignments();
+                state.attendance = initEmptyAttendance();
+                state.notes = '';
+            }
+        }
+
+        function saveToLocalStorage() {
+            if (!state.classroom) return;
+            const classroomKey = state.classroom.replace(/[^a-zA-Z0-9ก-๙]/g, '_');
+            
+            localStorage.setItem(`wizard_${classroomKey}_students`, JSON.stringify(state.students));
+            localStorage.setItem(`wizard_${classroomKey}_assignments`, JSON.stringify(state.assignments));
+            localStorage.setItem(`wizard_${classroomKey}_attendance`, JSON.stringify(state.attendance));
+            localStorage.setItem(`wizard_${classroomKey}_types`, JSON.stringify(state.duties));
+            localStorage.setItem(`wizard_${classroomKey}_notes`, state.notes);
+
+            // ซิงค์ขึ้น Google Sheets แบบเงียบๆ เบื้องหลัง (ไม่บล็อก UI, ทำงานเฉพาะเมื่อตั้งค่า CLOUD_API_URL แล้ว)
+            syncKeyToCloud(`wizard_${classroomKey}_students`);
+            syncKeyToCloud(`wizard_${classroomKey}_assignments`);
+            syncKeyToCloud(`wizard_${classroomKey}_attendance`);
+            syncKeyToCloud(`wizard_${classroomKey}_types`);
+            syncKeyToCloud(`wizard_${classroomKey}_notes`);
+        }
+
+        // Web Audio Effects
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playTickSound() {
+            try {
+                initAudio();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(580, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.1);
+            } catch (e) { }
+        }
+
+        function playSuccessSound() {
+            try {
+                initAudio();
+                if (audioCtx.state === 'suspended') audioCtx.resume();
+                const notes = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99];
+                notes.forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, audioCtx.currentTime + (idx * 0.06));
+                    gain.gain.setValueAtTime(0.08, audioCtx.currentTime + (idx * 0.06));
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + (idx * 0.06) + 0.35);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(audioCtx.currentTime + (idx * 0.06));
+                    osc.stop(audioCtx.currentTime + (idx * 0.06) + 0.35);
+                });
+            } catch (e) { }
+        }
+
+        let confettiInterval = null;
+        const canvas = document.getElementById('confetti-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            if(!canvas.parentElement) return;
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        class ConfettiParticle {
+            constructor() {
+                this.x = canvas.width / 2;
+                this.y = canvas.height / 2 + 20;
+                this.size = Math.random() * 8 + 5;
+                this.color = `hsl(${Math.random() * 360}, 100%, 60%)`;
+                this.angle = Math.random() * Math.PI * 2;
+                this.speed = Math.random() * 8 + 5;
+                this.gravity = 0.2;
+                this.drag = 0.96;
+                this.opacity = 1.0;
+                this.rotSpeed = Math.random() * 0.2 - 0.1;
+                this.rot = 0;
+            }
+            update() {
+                this.speed *= this.drag;
+                this.x += Math.cos(this.angle) * this.speed;
+                this.y += Math.sin(this.angle) * this.speed + this.gravity;
+                this.rot += this.rotSpeed;
+                this.opacity -= 0.015;
+            }
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rot);
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = Math.max(0, this.opacity);
+                ctx.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+                ctx.restore();
+            }
+        }
+
+        function burstConfetti() {
+            resizeCanvas();
+            particles = [];
+            for (let i = 0; i < 90; i++) {
+                particles.push(new ConfettiParticle());
+            }
+            if (confettiInterval) clearInterval(confettiInterval);
+            confettiInterval = setInterval(() => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach((p, idx) => {
+                    p.update();
+                    p.draw();
+                    if (p.opacity <= 0) {
+                        particles.splice(idx, 1);
+                    }
+                });
+                if (particles.length === 0) {
+                    clearInterval(confettiInterval);
+                }
+            }, 1000 / 60);
+        }
+
+        let activeRandomTarget = { day: null, dutyId: null };
+        let spinTimer = null;
+        let selectedCandidateList = [];
+        let spinIndex = 0;
+
+        function openModal(day, dutyId, dutyName) {
+            initAudio();
+            activeRandomTarget = { day, dutyId };
+            
+            const modal = document.getElementById('randomizer-modal');
+            const card = document.getElementById('modal-card');
+            const title = document.getElementById('target-duty-title');
+            
+            const targetDuty = state.duties.find(d => d.id === dutyId);
+            const iconStr = targetDuty ? targetDuty.icon : '🧹';
+            title.innerHTML = `${iconStr} ${dutyName} (${day})`;
+            
+            if (state.students.length === 0) {
+                alertBox("กรุณาเพิ่มชื่อเล่นของจอมเวทย์ในระบบฝั่งซ้ายก่อนนะครับ! 🧙‍♂️");
+                return;
+            }
+
+            const assignedToday = Object.values(state.assignments[day]).filter(id => id !== null);
+            let candidates = state.students.filter(student => !assignedToday.includes(student.id));
+
+            if (candidates.length === 0) {
+                candidates = [...state.students];
+            }
+
+            if (document.getElementById('smart-random').checked) {
+                const minDutyCount = Math.min(...candidates.map(s => s.dutiesCount || 0));
+                candidates = candidates.filter(s => (s.dutiesCount || 0) === minDutyCount);
+            }
+
+            selectedCandidateList = candidates;
+            spinIndex = 0;
+
+            document.getElementById('modal-stop-btn').classList.remove('hidden');
+            document.getElementById('modal-close-btn').classList.add('hidden');
+            document.getElementById('winner-reveal-badge').classList.add('hidden');
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            card.classList.remove('scale-95');
+            card.classList.add('scale-100');
+
+            startSpin();
+        }
+
+        function startSpin() {
+            if (spinTimer) clearInterval(spinTimer);
+            const textElement = document.getElementById('spinning-student-name');
+            
+            spinTimer = setInterval(() => {
+                if (selectedCandidateList.length === 0) {
+                    textElement.textContent = "ไม่มีรายชื่อผู้สมัคร";
+                    return;
+                }
+                const candidate = selectedCandidateList[spinIndex % selectedCandidateList.length];
+                textElement.innerHTML = `<span class="mr-2">${candidate.emoji}</span>${candidate.name}`;
+                playTickSound();
+                spinIndex++;
+            }, 65);
+        }
+
+        function stopSpin() {
+            clearInterval(spinTimer);
+            spinTimer = null;
+
+            if (selectedCandidateList.length === 0) {
+                closeModal();
+                return;
+            }
+
+            const winner = selectedCandidateList[spinIndex % selectedCandidateList.length];
+            const textElement = document.getElementById('spinning-student-name');
+            textElement.innerHTML = `🌟 <span class="scale-110 inline-block mx-1 animate-bounce">${winner.emoji} ${winner.name}</span> 🌟`;
+            
+            document.getElementById('winner-reveal-badge').classList.remove('hidden');
+            document.getElementById('modal-stop-btn').classList.add('hidden');
+            document.getElementById('modal-close-btn').classList.remove('hidden');
+
+            playSuccessSound();
+            burstConfetti();
+
+            assignDuty(activeRandomTarget.day, activeRandomTarget.dutyId, winner.id);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('randomizer-modal');
+            const card = document.getElementById('modal-card');
+            
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            card.classList.remove('scale-100');
+            card.classList.add('scale-95');
+            
+            if (spinTimer) {
+                clearInterval(spinTimer);
+                spinTimer = null;
+            }
+        }
+
+        function changeDailyLeader(day, studentId) {
+            if (!state.assignments[day]) {
+                state.assignments[day] = {};
+            }
+            state.assignments[day].dailyLeader = studentId || null;
+            saveToLocalStorage();
+            populateDutyGrid();
+        }
+
+        function renderStudents() {
+            const container = document.getElementById('students-container');
+            const counter = document.getElementById('student-count');
+            const placeholder = document.getElementById('no-students-message');
+            
+            container.innerHTML = '';
+            counter.textContent = `${state.students.length} คน`;
+
+            if (state.students.length === 0) {
+                container.appendChild(placeholder);
+                return;
+            }
+
+            let sortedStudents = [...state.students];
+            if (state.sortMode === 'name') {
+                sortedStudents.sort((a,b) => a.name.localeCompare(b.name, 'th'));
+            } else {
+                sortedStudents.sort((a,b) => (b.score || 100) - (a.score || 100));
+            }
+
+            sortedStudents.forEach(student => {
+                const card = document.createElement('div');
+                card.className = "flex items-center justify-between p-2.5 rounded-xl bg-white border border-purple-100 hover:border-purple-200 hover:bg-purple-50/40 transition-all duration-150 group text-sm";
+                
+                const currentScore = student.score !== undefined ? student.score : 100;
+                let scoreBadgeClass = "bg-purple-100 text-purple-700";
+                if (currentScore > 100) {
+                    scoreBadgeClass = "bg-emerald-100 text-emerald-700";
+                } else if (currentScore < 100) {
+                    scoreBadgeClass = "bg-rose-100 text-rose-700";
+                }
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl">${student.emoji}</span>
+                        <div>
+                            <span class="font-bold text-slate-700 block leading-tight">${student.name}</span>
+                            <span class="text-[10px] text-slate-400 font-medium">เวรที่ได้รับ: ${student.dutiesCount || 0} ครั้ง</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="${scoreBadgeClass} font-extrabold text-[10px] py-0.5 px-2 rounded-full" title="พลังเวทมนตร์สะสม">
+                            ✨ ${currentScore} MP
+                        </span>
+                        <button onclick="triggerRemoveStudent('${student.id}')" class="text-rose-400 hover:text-rose-600 p-1 opacity-0 group-hover:opacity-100 transition-opacity" title="ลบชื่อ">
+                            🗑️
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderDutySettings() {
+            const container = document.getElementById('custom-duties-container');
+            container.innerHTML = '';
+
+            state.duties.forEach(duty => {
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between p-2 rounded-xl bg-white border border-pink-100 hover:border-pink-300 transition-all text-sm";
+                item.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl">${duty.icon}</span>
+                        <span class="font-bold text-slate-700">${duty.name}</span>
+                    </div>
+                    <button onclick="triggerRemoveCustomDuty('${duty.id}')" class="text-rose-400 hover:text-rose-600 p-1" title="ลบประเภทเวร">
+                        🗑️
+                    </button>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function populateDutyGrid() {
+            const container = document.getElementById('weekly-grid-container');
+            container.innerHTML = '';
+
+            DAYS.forEach(day => {
+                const dayCard = document.createElement('div');
+                let dayColor = "bg-purple-600 text-white";
+                if(day === 'จันทร์') dayColor = "bg-yellow-400 text-slate-900";
+                if(day === 'อังคาร') dayColor = "bg-pink-500 text-white";
+                if(day === 'พุธ') dayColor = "bg-emerald-500 text-white";
+                if(day === 'พฤหัสฯ') dayColor = "bg-orange-500 text-white";
+                if(day === 'ศุกร์') dayColor = "bg-sky-500 text-white";
+
+                const assignedLeaderId = state.assignments[day]?.dailyLeader;
+                const assignedLeader = state.students.find(s => s.id === assignedLeaderId);
+
+                let leaderSelectOptions = `<option value="">-- เลือกหัวหน้าเวร --</option>`;
+                state.students.forEach(std => {
+                    const isSelected = std.id === assignedLeaderId ? 'selected' : '';
+                    leaderSelectOptions += `<option value="${std.id}" ${isSelected}>👑 ${std.emoji} ${std.name}</option>`;
+                });
+
+                const leaderPrintHTML = assignedLeader 
+                    ? `<div class="hidden print:block text-center text-xs font-bold text-slate-700 mb-2 border-b pb-1">👑 หัวหน้าเวร: ${assignedLeader.emoji} ${assignedLeader.name}</div>`
+                    : `<div class="hidden print:block text-center text-[10px] italic text-slate-400 mb-2 border-b pb-1">👑 ไม่มีหัวหน้าเวร</div>`;
+
+                const leaderUIHTML = `
+                    <div class="mb-3 p-2 bg-purple-50/50 rounded-xl border border-purple-100 flex flex-col gap-1 no-print">
+                        <label class="text-[10px] font-black text-purple-700 flex items-center gap-1">
+                            👑 หัวหน้ากลุ่มเวรประจำวัน
+                        </label>
+                        <select onchange="changeDailyLeader('${day}', this.value)" class="w-full bg-white border border-purple-200 text-[10px] p-1 rounded-lg font-bold cursor-pointer focus:outline-none">
+                            ${leaderSelectOptions}
+                        </select>
+                    </div>
+                `;
+
+                dayCard.className = "glass-card rounded-2xl shadow-sm p-3.5 flex flex-col h-full border border-slate-200/50 hover:shadow-md transition-all";
+                dayCard.innerHTML = `
+                    <h3 class="text-center font-black rounded-xl py-1.5 px-2 mb-2 text-xs ${dayColor} shadow-inner tracking-wide uppercase">
+                        วัน${day}
+                    </h3>
+                    ${leaderPrintHTML}
+                    ${leaderUIHTML}
+                    <div class="space-y-2.5 flex-1 flex flex-col justify-between">
+                        <div class="space-y-2.5" id="duties-list-${day}"></div>
+                    </div>
+                `;
+
+                container.appendChild(dayCard);
+                const dutiesContainer = document.getElementById(`duties-list-${day}`);
+
+                state.duties.forEach(duty => {
+                    const dutyBlock = document.createElement('div');
+                    dutyBlock.className = `p-2.5 rounded-xl border border-dashed flex flex-col justify-between gap-1.5 min-h-[110px] transition-all relative ${duty.color}`;
+                    
+                    const assignedStudentId = state.assignments[day][duty.id];
+                    const assignedStudent = state.students.find(s => s.id === assignedStudentId);
+                    const currentStatus = state.attendance[day]?.[duty.id] || 'pending';
+
+                    let selectOptions = `<option value="">-- เลือกจัดสรรเวร --</option>`;
+                    state.students.forEach(std => {
+                        const isSelected = std.id === assignedStudentId ? 'selected' : '';
+                        selectOptions += `<option value="${std.id}" ${isSelected}>${std.emoji} ${std.name}</option>`;
+                    });
+
+                    let statusLabel = "";
+                    let activeBorder = "";
+                    if (currentStatus === 'done') {
+                        statusLabel = `<span class="bg-emerald-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-md self-start">✅ ทำเสร็จสิ้น</span>`;
+                        activeBorder = "border-emerald-400 border-2";
+                    } else if (currentStatus === 'failed') {
+                        statusLabel = `<span class="bg-rose-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-md self-start">❌ ไม่ยอมทำ</span>`;
+                        activeBorder = "border-rose-400 border-2";
+                    } else if (currentStatus === 'absent') {
+                        statusLabel = `<span class="bg-amber-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-md self-start">💤 ลา/ขาด</span>`;
+                        activeBorder = "border-amber-400 border-2";
+                    }
+
+                    if (activeBorder) {
+                        dutyBlock.className = `${dutyBlock.className} ${activeBorder}`;
+                    }
+
+                    if (assignedStudent) {
+                        dutyBlock.innerHTML = `
+                            <div>
+                                <div class="flex justify-between items-start gap-1">
+                                    <span class="text-[10px] font-bold block opacity-75">${duty.icon} ${duty.name}</span>
+                                    ${statusLabel}
+                                </div>
+                                <div class="mt-1 flex items-center gap-1.5 font-extrabold text-xs text-slate-800">
+                                    <span class="text-base">${assignedStudent.emoji}</span>
+                                    <span class="truncate max-w-[90px]">${assignedStudent.name}</span>
+                                </div>
+                            </div>
+                            <div class="attendance-buttons mt-1 flex gap-1 justify-center no-print">
+                                <button onclick="setDutyStatus('${day}', '${duty.id}', 'done')" class="flex-1 bg-white hover:bg-emerald-50 border border-slate-200 text-[9px] font-bold py-0.5 rounded flex items-center justify-center gap-0.5 ${currentStatus === 'done' ? 'bg-emerald-50 border-emerald-400 text-emerald-700' : 'text-slate-600'}">✅ ทำ</button>
+                                <button onclick="setDutyStatus('${day}', '${duty.id}', 'failed')" class="flex-1 bg-white hover:bg-rose-50 border border-slate-200 text-[9px] font-bold py-0.5 rounded flex items-center justify-center gap-0.5 ${currentStatus === 'failed' ? 'bg-rose-50 border-rose-400 text-rose-700' : 'text-slate-600'}">❌ เบี้ยว</button>
+                                <button onclick="setDutyStatus('${day}', '${duty.id}', 'absent')" class="flex-1 bg-white hover:bg-amber-50 border border-slate-200 text-[9px] font-bold py-0.5 rounded flex items-center justify-center gap-0.5 ${currentStatus === 'absent' ? 'bg-amber-50 border-amber-400 text-amber-700' : 'text-slate-600'}">💤 ลา</button>
+                            </div>
+                            <div class="manual-select-container mt-1 no-print">
+                                <select onchange="manuallyAssign('${day}', '${duty.id}', this.value)" class="w-full bg-white/80 border border-slate-300 text-[10px] p-1 rounded font-semibold cursor-pointer focus:outline-none">
+                                    ${selectOptions}
+                                </select>
+                            </div>
+                            <div class="flex gap-1 justify-end mt-1 no-print">
+                                <button onclick="openModal('${day}', '${duty.id}', '${duty.name}')" class="bg-white/80 hover:bg-white text-[9px] text-slate-700 font-bold px-1.5 py-0.5 rounded border border-slate-300/40">🪄 สุ่มใหม่</button>
+                                <button onclick="unassignDuty('${day}', '${duty.id}')" class="bg-rose-50 hover:bg-rose-100 text-[9px] text-rose-600 font-bold px-1.5 py-0.5 rounded border border-rose-200/40">ลบ</button>
+                            </div>
+                        `;
+                    } else {
+                        dutyBlock.innerHTML = `
+                            <div>
+                                <span class="text-[10px] font-bold block opacity-70">${duty.icon} ${duty.name}</span>
+                                <div class="text-[10px] italic text-slate-400 mt-1.5 font-medium">ไม่มีผู้รับเวร</div>
+                            </div>
+                            <div class="manual-select-container mt-1.5 no-print">
+                                <select onchange="manuallyAssign('${day}', '${duty.id}', this.value)" class="w-full bg-white/80 border border-slate-300 text-[10px] p-1 rounded font-semibold cursor-pointer">
+                                    ${selectOptions}
+                                </select>
+                            </div>
+                            <button onclick="openModal('${day}', '${duty.id}', '${duty.name}')" class="w-full mt-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold py-1 px-2 rounded-lg text-[10px] shadow shadow-purple-200 flex items-center justify-center gap-1 no-print">
+                                🪄 สุ่มด่วน!
+                            </button>
+                        `;
+                    }
+                    dutiesContainer.appendChild(dutyBlock);
+                });
+            });
+        }
+
+        function setDutyStatus(day, dutyId, newStatus) {
+            const studentId = state.assignments[day]?.[dutyId];
+            if (!studentId) return;
+
+            const student = state.students.find(s => s.id === studentId);
+            if (!student) return;
+
+            if (!state.attendance[day]) state.attendance[day] = {};
+            const oldStatus = state.attendance[day][dutyId] || 'pending';
+
+            if (oldStatus === newStatus) return;
+
+            if (oldStatus === 'done') {
+                student.score = (student.score || 100) - 10;
+            } else if (oldStatus === 'failed') {
+                student.score = (student.score || 100) + 10;
+            }
+
+            if (newStatus === 'done') {
+                student.score = (student.score || 100) + 10;
+                alertBox(`✨ ${student.emoji} ${student.name} ทำเวรเรียบร้อย! พลังเวทมนตร์เพิ่มขึ้น +10`, false);
+                playSuccessSound();
+                burstConfetti();
+            } else if (newStatus === 'failed') {
+                student.score = (student.score || 100) - 10;
+                alertBox(`💀 ${student.emoji} ${student.name} ไม่ยอมปฏิบัติงาน! หักคะแนน -10`, true);
+                playTickSound();
+            }
+
+            state.attendance[day][dutyId] = newStatus;
+            saveToLocalStorage();
+            renderStudents();
+            populateDutyGrid();
+        }
+
+        function manuallyAssign(day, dutyId, studentId) {
+            if (studentId === "") {
+                unassignDuty(day, dutyId);
+            } else {
+                assignDuty(day, dutyId, studentId);
+            }
+        }
+
+        function addStudent() {
+            const nameInput = document.getElementById('student-name');
+            const emojiSelect = document.getElementById('student-emoji');
+            const name = nameInput.value.trim();
+            const emoji = emojiSelect.value;
+
+            if (!name) return;
+
+            const id = 'student_' + Date.now() + Math.random().toString(36).substring(2, 5);
+            state.students.push({ id, name, emoji, dutiesCount: 0, score: 100 });
+
+            nameInput.value = '';
+            saveToLocalStorage();
+            recalculateDutiesCount();
+            renderStudents();
+            populateDutyGrid();
+        }
+
+        async function triggerRemoveStudent(id) {
+            const confirmed = await customConfirm('แน่ใจนะว่าจะลบจอมเวทย์คนนี้ออกจากห้องเรียน?');
+            if (confirmed) {
+                removeStudent(id);
+            }
+        }
+
+        function removeStudent(id) {
+            DAYS.forEach(day => {
+                if (state.assignments[day].dailyLeader === id) state.assignments[day].dailyLeader = null;
+                state.duties.forEach(duty => {
+                    if (state.assignments[day][duty.id] === id) {
+                        state.assignments[day][duty.id] = null;
+                        state.attendance[day][duty.id] = 'pending';
+                    }
+                });
+            });
+            state.students = state.students.filter(student => student.id !== id);
+            recalculateDutiesCount();
+            saveToLocalStorage();
+            renderStudents();
+            populateDutyGrid();
+        }
+
+        async function triggerClearStudents() {
+            const confirmed = await customConfirm('คุณแน่ใจที่จะลบรายชื่อนักเรียนทั้งหมดในห้องนี้หรือไม่?');
+            if (confirmed) {
+                state.students = [];
+                state.assignments = initEmptyAssignments();
+                state.attendance = initEmptyAttendance();
+                saveToLocalStorage();
+                renderStudents();
+                populateDutyGrid();
+            }
+        }
+
+        function loadSampleData() {
+            const samples = [
+                { name: 'น้องภูผา', emoji: '🦊' }, { name: 'น้องพอดี', emoji: '🐱' },
+                { name: 'น้องอะตอม', emoji: '🚀' }, { name: 'น้องมิกกี้', emoji: '🐰' },
+                { name: 'น้องเรนโบว์', emoji: '🦄' }, { name: 'น้องใบข้าว', emoji: '🌾' }
+            ];
+            state.students = [];
+            samples.forEach((sample, i) => {
+                state.students.push({ id: `sample_${i}_${Date.now()}`, name: sample.name, emoji: sample.emoji, dutiesCount: 0, score: 100 });
+            });
+            saveToLocalStorage();
+            recalculateDutiesCount();
+            renderStudents();
+            populateDutyGrid();
+        }
+
+        function addCustomDuty() {
+            const input = document.getElementById('duty-name-input');
+            const emojiSelect = document.getElementById('duty-emoji');
+            const name = input.value.trim();
+            const emoji = emojiSelect.value;
+
+            if (!name) return;
+            const id = 'duty_' + Date.now();
+            const colorObj = COLOR_SCHEMES[Math.floor(Math.random() * COLOR_SCHEMES.length)];
+            state.duties.push({ id, name, icon: emoji, color: `${colorObj.bg} ${colorObj.text} ${colorObj.border} ${colorObj.hover}` });
+            input.value = '';
+
+            syncAssignmentsWithDuties();
+            saveToLocalStorage();
+            renderDutySettings();
+            populateDutyGrid();
+        }
+
+        async function triggerRemoveCustomDuty(id) {
+            const confirmed = await customConfirm('ต้องการลบงานเวรนี้ใช่หรือไม่?');
+            if (confirmed) {
+                if (state.duties.length <= 1) {
+                    alertBox("ต้องการงานเวรอย่างน้อย 1 ประเภท!");
+                    return;
+                }
+                state.duties = state.duties.filter(d => d.id !== id);
+                syncAssignmentsWithDuties();
+                recalculateDutiesCount();
+                saveToLocalStorage();
+                renderDutySettings();
+                renderStudents();
+                populateDutyGrid();
+            }
+        }
+
+        function assignDuty(day, dutyId, studentId) {
+            const oldStudentId = state.assignments[day]?.[dutyId];
+            if (oldStudentId && state.attendance[day]?.[dutyId]) {
+                const oldStudent = state.students.find(s => s.id === oldStudentId);
+                if (oldStudent) {
+                    const status = state.attendance[day][dutyId];
+                    if (status === 'done') oldStudent.score = (oldStudent.score || 100) - 10;
+                    if (status === 'failed') oldStudent.score = (oldStudent.score || 100) + 10;
+                }
+            }
+
+            state.assignments[day][dutyId] = studentId;
+            if (!state.attendance[day]) state.attendance[day] = {};
+            state.attendance[day][dutyId] = 'pending';
+
+            recalculateDutiesCount();
+            saveToLocalStorage();
+            renderStudents();
+            populateDutyGrid();
+        }
+
+        function unassignDuty(day, dutyId) {
+            const oldStudentId = state.assignments[day]?.[dutyId];
+            if (oldStudentId && state.attendance[day]?.[dutyId]) {
+                const oldStudent = state.students.find(s => s.id === oldStudentId);
+                if (oldStudent) {
+                    const status = state.attendance[day][dutyId];
+                    if (status === 'done') oldStudent.score = (oldStudent.score || 100) - 10;
+                    if (status === 'failed') oldStudent.score = (oldStudent.score || 100) + 10;
+                }
+            }
+
+            state.assignments[day][dutyId] = null;
+            if (state.attendance[day]) state.attendance[day][dutyId] = 'pending';
+
+            recalculateDutiesCount();
+            saveToLocalStorage();
+            renderStudents();
+            populateDutyGrid();
+        }
+
+        async function triggerResetAssignments() {
+            const confirmed = await customConfirm('ต้องการเคลียร์ตารางมอบหมายเวรเพื่อเริ่มต้นสัปดาห์ใหม่ใช่ไหม?');
+            if (confirmed) {
+                state.assignments = initEmptyAssignments();
+                state.attendance = initEmptyAttendance();
+                recalculateDutiesCount();
+                saveToLocalStorage();
+                renderStudents();
+                populateDutyGrid();
+            }
+        }
+
+        function recalculateDutiesCount() {
+            state.students.forEach(s => s.dutiesCount = 0);
+            DAYS.forEach(day => {
+                if (state.assignments[day]) {
+                    state.duties.forEach(duty => {
+                        const assignedId = state.assignments[day][duty.id];
+                        if (assignedId) {
+                            const student = state.students.find(s => s.id === assignedId);
+                            if (student) student.dutiesCount = (student.dutiesCount || 0) + 1;
+                        }
+                    });
+                }
+            });
+        }
+
+        function saveMagicalNotes(value) {
+            state.notes = value;
+            saveToLocalStorage();
+        }
+
+        function insertPresetSpell(presetText) {
+            const pad = document.getElementById('magical-notepad');
+            const dateStr = new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short' });
+            const finalValue = pad.value ? pad.value + `\n[${dateStr}] ` + presetText : `[${dateStr}] ` + presetText;
+            pad.value = finalValue;
+            saveMagicalNotes(finalValue);
+            alertBox("บันทึกคำเวทมนตร์ลงคัมภีร์เรียบร้อย! ✨", false);
+        }
+
+        async function clearMagicalNotes() {
+            const confirmed = await customConfirm("ต้องการลบคัมภีร์โน๊ตเวทมนตร์ทั้งหมด?");
+            if (confirmed) {
+                document.getElementById('magical-notepad').value = '';
+                saveMagicalNotes('');
+                alertBox("ลบโน๊ตเรียบร้อย", false);
+            }
+        }
+
+        window.onload = async function () {
+            const cachedClassroom = localStorage.getItem('wizard_duty_current_classroom');
+            const cachedLeader = localStorage.getItem('wizard_duty_current_leader');
+
+            if (cachedClassroom && cachedLeader) {
+                state.classroom = cachedClassroom;
+                state.leaderName = cachedLeader;
+
+                document.getElementById('login-page').classList.add('hidden');
+                document.getElementById('app-page').classList.remove('hidden');
+
+                document.getElementById('classroom-badge').innerText = `ห้องเรียน: ${cachedClassroom}`;
+                document.getElementById('leader-badge').innerText = `หัวหน้าห้อง: ${cachedLeader}`;
+
+                await syncClassroomFromCloud(cachedClassroom);
+                loadClassroomData();
+                recalculateDutiesCount();
+                renderStudents();
+                renderDutySettings();
+                populateDutyGrid();
+            } else {
+                document.getElementById('login-page').classList.remove('hidden');
+                document.getElementById('app-page').classList.add('hidden');
+                toggleAuthTab('login');
+            }
+        }
+    </script>
+</body>
+</html>
